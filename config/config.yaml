@@ -1,0 +1,11 @@
+# Configfile for Snakemake pipeline
+
+# Folders
+workdir:
+datadir: data/
+resultsdir: results/
+histogramPath: rendered/histogram.png
+
+# Inputfile
+inputfile: heart_data_small.arff
+

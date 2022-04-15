@@ -1,0 +1,81 @@
+
+"""
+Snakemake pipeline for classification of heart disease.
+Accepts ARFF files which will be cleaned and classified.
+"""
+
+__author__ = "Sander Bouwman"
+__copyright__ = "Copyright 2022, Sander Bouwman"
+
+configfile: "config/config.yaml"
+
+RESULTSDIR = config["resultsdir"]
+DATADIR = config["datadir"]
+HISTOGRAM_PATH = config["histogramPath"]
+INPUTFILE = config["inputfile"]
+
+rule all:
+    input:
+        RESULTSDIR + HISTOGRAM_PATH
+
+rule clean_arff:
+    """
+    
+    """
+    input:
+        DATADIR + INPUTFILE
+    output:
+        RESULTSDIR + "cleaned/" + INPUTFILE
+    shell:
+        "Rscript workflow/scripts/clean_arff.R {input} {output}"
+
+
+checkpoint split_arff:
+    input:
+        RESULTSDIR + "cleaned/" + INPUTFILE
+    output:
+        directory(RESULTSDIR + "split_arff")
+    script:
+        "scripts/split_arff.py"
+
+# process these unknown number of files
+rule classify_arff:
+    threads: 8
+    output:
+        txt = RESULTSDIR + "classified/{i}.arff",
+    input:
+        txt = "results/split_arff/{i}.arff",
+    script:
+        'scripts/classify_instance.py'
+
+
+def aggregate_input(wildcards):
+    """
+    Will aggregate the file names of split out files
+    """
+    checkpoint_output = checkpoints.split_arff.get(**wildcards).output[0]
+    return expand(RESULTSDIR + "classified/{i}.arff",
+           i=glob_wildcards(os.path.join(checkpoint_output, '{i}.arff')).i)
+
+rule merge_to_csv:
+    """
+    Merges the classified arff files to a singel csv file for further processing
+    """
+    output:
+        combined = RESULTSDIR + "merged/all.csv",
+    input:
+        aggregate_input
+    script:
+        "scripts/merge_to_csv.py"
+
+rule create_histogram:
+    """
+    Rule that accepts a CSV file which contains the classification data.
+    A histogram will be generated.
+    """
+    input:
+        RESULTSDIR + "merged/all.csv"
+    output:
+        RESULTSDIR + HISTOGRAM_PATH
+    shell:
+        "Rscript workflow/scripts/create_histogram.R {input} {output}"
