@@ -50,24 +50,27 @@ instances will be removed from the dataset.
 ![Pipeline](https://github.com/devalk96/T11_Dataprocessing_Eindopdracht/blob/master/workflow/dag.png)
 
 #### Step 1
-##### Clean *ARFF* file from missing values and save to *CSV*
-Uses script: *clean_to_csv.R*  
-The pipeline uses arff files as input these will be converted to csv files as 
-this is an easier file format to work with.  
-
+##### Clean *ARFF* file from missing values
+Uses script: *clean_arff.R*  
+The pipeline uses arff files as input. Rows with missing values will be removed as model doesn't 
+accept missing values
 
 #### Step 2
-##### Classify using *classify_jar_wrapper.py*
-Uses script: *parse_data.py* & *classify_jar_wrapper.py*  
-
-First the script *parse_data.py* is called. This script will run *classify_jar_wrapper.py* 
-for each instance. The data will be saved in a Pandas Dataframe which will then be saved.
-
-Classification is done using a wrapper for a jar file. 
-The jar has some compiling errors therefor the option to the output to file is broken.  
-A custom Python wrapper was written that runs the jar and processes the output.
+##### Split arff files out with *split_arff.py*
+For parallelization purposes it is better to split out the arff files into arff files which only
+contains a single instance.
 
 #### Step 3
+##### Classify using *classify_instance.py*
+Classify instance calls *classifier.jar* (located in resources.) This model will classify for 
+heart disease.
+
+#### Step 4
+##### Merge all the classifications into a single csv file using *merge_to_csv.py*
+After classification is done. *merge_to_csv.py* will merge all the arff files and comines them 
+into a single csv files. As these are easier to work with in the future.
+
+#### Step 5
 ##### Create a histogram
 Uses script: *create_histogram.R*  
 A histogram is created and saved. The histogram creates a histogram of ages and the ratio of 
@@ -78,11 +81,15 @@ The config.yaml contains all the paths which can be edited. The Snakefile itself
 doesn't need any changes to run. The config file is layout at follows: 
 
 ````yaml
-workdir: ../data/ 
-resultdir: ../results/
-cleanedFile: heart_data_cleaned.csv
-classifiedCSV: classified.csv
-histogramPath: histogram.png
+# Folders
+workdir:
+datadir: data/
+resultsdir: results/
+histogramPath: rendered/histogram.png
+
+# Inputfile
+inputfile: heart_data_small.arff
+
 ````
 
 ### Starting the pipeline
@@ -95,7 +102,9 @@ Snakemake -c[amount of cores]
 ## Directory structure
 ````text
 .
-├── config.yaml
+├── config
+│   └── config.yaml
+├── dag.png
 ├── data
 │   ├── heart_data_large.arff
 │   ├── heart_data_medium.arff
@@ -106,18 +115,14 @@ Snakemake -c[amount of cores]
 │   ├── adaboost.model
 │   └── classify.jar
 ├── results
-│   ├── classified.csv
-│   ├── heart_data_cleaned.csv
-│   └── histogram.png
+│   ├── classified
+│   ├── cleaned
+│   ├── merged
+│   ├── rendered
+│   └── split_arff
 └── workflow
     ├── Snakefile
-    ├── classify_jar_wrapper.py
-    ├── clean_to_csv.R
-    ├── create_histogram.R
-    ├── dag.png
-    ├── data_visualizer.py
-    ├── json_test.py
-    └── parse_data.py
+    └── scripts
 ````
 
 ## Contact
