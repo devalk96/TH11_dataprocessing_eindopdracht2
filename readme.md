@@ -47,7 +47,7 @@ instances will be removed from the dataset.
 
 ### Pipeline steps
 
-![Pipeline](https://github.com/devalk96/T11_Dataprocessing_Eindopdracht/blob/master/workflow/dag.png)
+![Pipeline](https://github.com/devalk96/TH11_dataprocessing_eindopracht2/blob/master/dag.png)
 
 #### Step 1
 ##### Clean *ARFF* file from missing values
